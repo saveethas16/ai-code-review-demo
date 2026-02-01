@@ -11,7 +11,7 @@ if not endpoint or not api_key or not deployment:
     print("❌ Missing environment variables")
     sys.exit(1)
 
-url = f"{endpoint}/openai/deployments/{deployment}/chat/completions?api-version=2024-02-15-preview"
+url = f"{endpoint}/openai/deployments/{deployment}/responses?api-version=2024-02-15-preview"
 
 headers = {
     "Content-Type": "application/json",
@@ -19,17 +19,20 @@ headers = {
 }
 
 payload = {
-    "messages": [
+    "input": [
         {
             "role": "system",
-            "content": "You are a code reviewer. Check only syntax errors."
+            "content": [
+                { "type": "text", "text": "You are a code reviewer. Check only syntax errors." }
+            ]
         },
         {
             "role": "user",
-            "content": "def add(a, b)\n return a + b"
+            "content": [
+                { "type": "text", "text": "def add(a, b)\n return a + b" }
+            ]
         }
-    ],
-    "temperature": 0
+    ]
 }
 
 response = requests.post(url, headers=headers, json=payload)
@@ -38,7 +41,6 @@ print("🔹 Status Code:", response.status_code)
 print("🔹 Raw Response:")
 print(response.text)
 
-# SAFETY CHECK
 if response.status_code != 200:
     print("❌ Azure OpenAI error")
     sys.exit(1)
@@ -46,9 +48,9 @@ if response.status_code != 200:
 try:
     data = response.json()
 except Exception as e:
-    print("❌ Failed to parse JSON:", e)
+    print("❌ JSON parse failed:", e)
     sys.exit(1)
 
-review = data["choices"][0]["message"]["content"]
+review = data["output"][0]["content"][0]["text"]
 print("✅ AI Review:")
 print(review)
